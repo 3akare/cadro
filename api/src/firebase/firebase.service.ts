@@ -3,14 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import * as path from 'path';
 import * as fs from 'fs';
-import type { app as adminAppType } from 'firebase-admin'; // <-- key change
+import type { app as adminAppType } from 'firebase-admin';
 import { Auth } from 'firebase-admin/auth';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
-  private adminApp: adminAppType.App; // <-- updated type
+  private adminApp: adminAppType.App;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   onModuleInit(): void {
     const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
@@ -30,12 +30,16 @@ export class FirebaseService implements OnModuleInit {
     this.adminApp =
       admin.apps.length === 0
         ? admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-          })
+          credential: admin.credential.cert(serviceAccount),
+        })
         : admin.app();
   }
 
   getAuth(): Auth {
-    return this.adminApp.auth(); // ✅ now properly typed
+    return this.adminApp.auth();
+  }
+
+  getFirestore(): admin.firestore.Firestore {
+    return admin.firestore();
   }
 }

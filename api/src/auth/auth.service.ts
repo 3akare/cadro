@@ -1,6 +1,5 @@
 import { Injectable, BadRequestException, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
-import { RegisterUserDto } from './dto/register-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { DecodedIdToken } from 'firebase-admin/auth';
 
@@ -17,34 +16,26 @@ export class AuthService {
             const decodedToken: DecodedIdToken = await auth.verifyIdToken(firebaseToken);
             const { uid, email } = decodedToken;
 
-            // Here, you could fetch user data from your Firestore `users` collection if needed
-            // For now, we'll just use the data from the token
+            const db = this.firebaseService.getFirestore();
+            const userRef = db.collection('users').doc(uid);
+            const userDoc = await userRef.get();
+
+            if (!userDoc.exists) {
+                await userRef.set({
+                    email,
+                    createdAt: new Date(),
+                    subscription: {
+                        plan: null,
+                        status: 'expired',
+                        expiresAt: null
+                    }
+                });
+            }
             const payload = { sub: uid, email };
-            // Sign and return our custom backend JWT
             const accessToken = this.jwtService.sign(payload);
             return { accessToken };
         } catch (error) {
             throw new UnauthorizedException('Invalid Firebase token.');
-        }
-    }
-
-    async register(registerDto: RegisterUserDto) {
-        const { email, password } = registerDto;
-        const auth = this.firebaseService.getAuth();
-
-        try {
-            const userRecord = await auth.createUser({
-                email,
-                password,
-                emailVerified: false,
-                disabled: false,
-            });
-            return { uid: userRecord.uid, email: userRecord.email };
-        } catch (error) {
-            if (error.code === 'auth/email-already-exists') {
-                throw new BadRequestException('The email address is already in use by another account.');
-            }
-            throw new InternalServerErrorException('An error occurred during registration.');
         }
     }
 }
