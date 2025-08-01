@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import AuthGuard from '@/app/components/AuthGuard';
 
 const plans = [
     { id: '1-day', name: '1-Day Pass', price: '100 NGN' },
@@ -19,12 +20,10 @@ export default function SubscribePage() {
         try {
             const accessToken = localStorage.getItem('accessToken');
             const response = await axios.post(
-                'https://2f37wbc4-3001.uks1.devtunnels.ms/api/v1/subscriptions/create-intent',
+                `${process.env.NEXT_PUBLIC_BACKEND_URL as string}/api/v1/subscriptions/create-intent`,
                 { plan: planId },
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
-
-            // Redirect user to Paystack's payment page
             const { authorization_url } = response.data.data;
             window.location.href = authorization_url;
 
@@ -37,24 +36,26 @@ export default function SubscribePage() {
     };
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold">Choose Your Plan</h2>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {plans.map((plan) => (
-                    <div key={plan.id} className="border p-4 rounded-lg text-center">
-                        <h3 className="text-xl font-semibold">{plan.name}</h3>
-                        <p className="text-2xl my-4">{plan.price}</p>
-                        <button
-                            onClick={() => handleSelectPlan(plan.id as any)}
-                            disabled={loadingPlan === plan.id}
-                            className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
-                        >
-                            {loadingPlan === plan.id ? 'Processing...' : 'Choose Plan'}
-                        </button>
-                    </div>
-                ))}
+        <AuthGuard>
+            <div>
+                <h2 className="text-2xl font-bold">Choose Your Plan</h2>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {plans.map((plan) => (
+                        <div key={plan.id} className="border p-4 rounded-lg text-center">
+                            <h3 className="text-xl font-semibold">{plan.name}</h3>
+                            <p className="text-2xl my-4">{plan.price}</p>
+                            <button
+                                onClick={() => handleSelectPlan(plan.id as any)}
+                                disabled={loadingPlan === plan.id}
+                                className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
+                            >
+                                {loadingPlan === plan.id ? 'Processing...' : 'Choose Plan'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                {error && <p className="mt-4 text-red-600">{error}</p>}
             </div>
-            {error && <p className="mt-4 text-red-600">{error}</p>}
-        </div>
+        </AuthGuard>
     );
 }

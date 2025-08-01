@@ -12,7 +12,7 @@ const getBackendToken = async () => {
   if (!currentUser) throw new Error("No user found after login.");
 
   const firebaseToken = await currentUser.getIdToken();
-  const response = await axios.post('https://2f37wbc4-3001.uks1.devtunnels.ms/api/v1/auth/login', {
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL as string}/api/v1/auth/login`, {
     token: firebaseToken,
   });
 
