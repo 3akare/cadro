@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { JwtService } from '@nestjs/jwt';
 import { DecodedIdToken } from 'firebase-admin/auth';
