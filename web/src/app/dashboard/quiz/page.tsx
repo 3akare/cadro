@@ -1,5 +1,5 @@
-import AuthGuard from "@/app/components/AuthGuard";
-import SubscriptionGuard from "@/app/components/SubscriptionGuard";
+import AuthGuard from "@/app/components/auth-guard";
+import SubscriptionGuard from "@/app/components/subscription-guard";
 
 export default function QuizPage() {
     return (

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import AuthGuard from '@/app/components/AuthGuard';
+import AuthGuard from '@/app/components/auth-guard';
 
 const plans = [
     { id: '1-day', name: '1-Day Pass', price: '100 NGN' },

@@ -1,7 +1,7 @@
-import LogoutButton from '../components/LogoutButton';
+import LogoutButton from '../components/logout-button';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import AuthGuard from '../components/AuthGuard'; // this is a client component
+import AuthGuard from '../components/auth-guard';
 
 export const metadata: Metadata = {
     title: 'Dashboard',
