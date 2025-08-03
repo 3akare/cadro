@@ -13,19 +13,17 @@ const planPrices = {
 @Injectable()
 export class SubscriptionsService {
     private readonly paystackSecret: string;
-    private readonly callback_url: string = 'https://your-frontend-url.com/subscription/callback';
+    private readonly callbackUrl: string;
 
     constructor(private configService: ConfigService, private firebaseService: FirebaseService) {
-        const paystackSecret = this.configService.get<string>('PAYSTACK_SECRET_KEY');
         const callbackUrl = this.configService.get<string>('PAYSTACK_CALLBACK_URL');
-        if (callbackUrl) {
-            this.callback_url = callbackUrl;
-        }
-        if (!paystackSecret) {
-            throw new InternalServerErrorException('PAYSTACK_SECRET_KEY is not defined in environment variables.');
-        }
+        const paystackSecret = this.configService.get<string>('PAYSTACK_SECRET_KEY');
+
+        if (!callbackUrl) throw new InternalServerErrorException('PAYSTACK_CALLBACK_URL is not defined in environment variables.');
+        if (!paystackSecret) throw new InternalServerErrorException('PAYSTACK_SECRET_KEY is not defined in environment variables.');
+
+        this.callbackUrl = callbackUrl;
         this.paystackSecret = paystackSecret;
-        this.callback_url = this.callback_url;
     }
 
     async getPaystackSecret(): Promise<string> {
@@ -39,7 +37,7 @@ export class SubscriptionsService {
         const data = {
             email,
             amount,
-            callback_url: this.callback_url,
+            callback_url: this.callbackUrl,
             metadata: {
                 userId,
                 plan,
