@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 
 
 @Module({
@@ -10,9 +11,10 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    AuthModule,
     FirebaseModule,
     SubscriptionsModule,
+    AuthModule,
+    QuizzesModule,
   ]
 })
 export class AppModule { }

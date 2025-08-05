@@ -1,45 +1,42 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import * as path from 'path';
-import * as fs from 'fs';
-import type { app as adminAppType } from 'firebase-admin';
+import { App } from 'firebase-admin/app';
 import { Auth } from 'firebase-admin/auth';
+import { firestore } from 'firebase-admin'; // Correctly import firestore namespace
 
 @Injectable()
-export class FirebaseService implements OnModuleInit {
-  private adminApp: adminAppType.App;
+export class FirebaseService {
+  private readonly adminApp: App;
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private configService: ConfigService) {
+    // Check if the app is already initialized to prevent errors during hot-reloading
+    if (admin.apps.length === 0) {
+      const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
 
-  onModuleInit(): void {
-    const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
+      if (!serviceAccountPath) {
+        throw new Error('FIREBASE_SERVICE_ACCOUNT_PATH is not defined in the environment variables.');
+      }
 
-    if (!serviceAccountPath) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_PATH is not defined in the environment variables.');
+      // We use require() here because it dynamically loads the JSON at runtime
+      const serviceAccount = require(process.cwd() + '/' + serviceAccountPath);
+
+      this.adminApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      console.log('Firebase Admin Initialized.');
+    } else {
+      this.adminApp = admin.app(); // Get the already initialized app
     }
-
-    const resolvedPath = path.resolve(serviceAccountPath);
-
-    if (!fs.existsSync(resolvedPath)) {
-      throw new Error(`Firebase service account file not found at path: ${resolvedPath}`);
-    }
-
-    const serviceAccount = require(resolvedPath);
-
-    this.adminApp =
-      admin.apps.length === 0
-        ? admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        })
-        : admin.app();
   }
 
+  // This method gets the Authentication service
   getAuth(): Auth {
-    return this.adminApp.auth();
+    return admin.auth();
   }
 
-  getFirestore(): admin.firestore.Firestore {
+  // This method gets the Firestore service
+  getFirestore(): firestore.Firestore {
     return admin.firestore();
   }
 }
