@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GamesService } from './games.service';
 import { IsNotEmpty, IsString } from 'class-validator';
@@ -18,5 +18,11 @@ export class GamesController {
     create(@Body() createGameDto: CreateGameDto, @Req() req) {
         const { userId } = req.user;
         return this.gamesService.create(createGameDto.quizId, userId);
+    }
+
+    @Post(':gameCode/start')
+    start(@Param('gameCode') gameCode: string, @Req() req) {
+        const { userId } = req.user;
+        return this.gamesService.startGame(gameCode, userId);
     }
 }

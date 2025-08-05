@@ -42,4 +42,37 @@ export class GamesService {
         await gameRef.set(gameData);
         return { gameCode };
     }
+
+    async startGame(gameCode: string, userId: string) {
+        const gameRef = this.db.collection('games').doc(gameCode);
+        const gameDoc = await gameRef.get();
+
+        if (!gameDoc.exists) {
+            throw new NotFoundException(`Game with code "${gameCode}" not found.`);
+        }
+
+        const gameData = gameDoc.data();
+
+        if (!gameData) {
+            throw new NotFoundException(`Game data for code "${gameCode}" not found.`);
+        }
+
+        // Security Check: Ensure the user starting the game is the host.
+        if (gameData.hostId !== userId) {
+            throw new ForbiddenException('You are not authorized to start this game.');
+        }
+
+        // State Check: Ensure the game is actually in the lobby.
+        if (gameData.state !== 'lobby') {
+            throw new ForbiddenException('This game has already started or has ended.');
+        }
+
+        // Update the game state to begin the quiz
+        await gameRef.update({
+            state: 'in-progress',
+            currentQuestionIndex: 0, // Start with the first question
+        });
+
+        return { message: `Game ${gameCode} has started.` };
+    }
 }
