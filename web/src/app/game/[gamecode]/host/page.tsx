@@ -1,22 +1,32 @@
-'use client'; // This directive is still crucial at the top level
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'next/navigation';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
+import { collection, onSnapshot, doc } from 'firebase/firestore'; // Import doc
 import { db } from '../../../../lib/firebase';
 import QRCode from 'react-qr-code';
-import SubscriptionGuard from '../../../components/subscription-guard'; // Import the guard
+import SubscriptionGuard from '../../../components/subscription-guard';
+import { startGame } from '../../../../services/api';
 
 interface Participant {
     id: string;
     pseudonym: string;
 }
 
-// THE FIX: We create a dedicated client component for the lobby UI.
+interface GameState {
+    state: 'lobby' | 'in-progress' | 'finished';
+    // Add other game state fields as needed
+}
+
+// This is the main UI component, now with full functionality
 function HostLobbyUI() {
+    const router = useRouter();
     const params = useParams();
     const gameCode = params.gamecode as string;
+
     const [participants, setParticipants] = useState<Participant[]>([]);
+    const [gameState, setGameState] = useState<GameState | null>(null);
+    const [loading, setLoading] = useState(false); // For the start button
 
     const joinUrl = useMemo(() => {
         if (typeof window !== 'undefined' && gameCode) {
@@ -25,6 +35,7 @@ function HostLobbyUI() {
         return '';
     }, [gameCode]);
 
+    // Effect to listen for participant changes
     useEffect(() => {
         if (!gameCode) return;
         const participantsRef = collection(db, 'games', gameCode, 'participants');
@@ -37,6 +48,38 @@ function HostLobbyUI() {
         });
         return () => unsubscribe();
     }, [gameCode]);
+
+    // NEW Effect: Listen for changes to the main game document (state changes)
+    useEffect(() => {
+        if (!gameCode) return;
+        const gameRef = doc(db, 'games', gameCode);
+        const unsubscribe = onSnapshot(gameRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setGameState(docSnap.data() as GameState);
+            }
+        });
+        return () => unsubscribe();
+    }, [gameCode]);
+
+    // NEW Effect: React to game state changes by redirecting
+    useEffect(() => {
+        if (gameState?.state === 'in-progress') {
+            // When game starts, navigate to the presenter's question view
+            router.push(`/game/${gameCode}/host/question`);
+        }
+    }, [gameState, gameCode, router]);
+
+    const handleStartQuiz = async () => {
+        setLoading(true);
+        try {
+            await startGame(gameCode);
+            // The useEffect above will handle the redirect automatically
+        } catch (error) {
+            console.error("Failed to start quiz", error);
+            alert("Could not start the quiz. Please try again.");
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex h-screen bg-gray-100">
@@ -57,8 +100,12 @@ function HostLobbyUI() {
                 </div>
 
                 <div className="mt-auto">
-                    <button className="w-full bg-green-600 text-white font-bold py-4 px-12 rounded-lg text-2xl hover:bg-green-700 disabled:bg-gray-400" disabled={participants.length === 0}>
-                        Start Quiz ({participants.length})
+                    <button
+                        onClick={handleStartQuiz}
+                        className="w-full bg-green-600 text-white font-bold py-4 px-12 rounded-lg text-2xl hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={participants.length === 0 || loading}
+                    >
+                        {loading ? 'Starting...' : `Start Quiz (${participants.length})`}
                     </button>
                 </div>
             </div>
@@ -81,7 +128,7 @@ function HostLobbyUI() {
     );
 }
 
-// The exported page component now wraps the UI component in the guard.
+// The exported page remains the same, wrapping the UI in the guard
 export default function HostLobbyPage() {
     return (
         <SubscriptionGuard>

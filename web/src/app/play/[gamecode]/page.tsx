@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+
+interface GameState {
+    state: 'lobby' | 'in-progress' | 'finished';
+}
 
 export default function PlayLobbyPage() {
     const params = useParams();
@@ -13,17 +17,49 @@ export default function PlayLobbyPage() {
     const [gameExists, setGameExists] = useState<boolean | null>(null);
     const [pseudonym, setPseudonym] = useState('');
     const [hasJoined, setHasJoined] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    // Effect to check if game exists initially
     useEffect(() => {
         const checkGame = async () => {
             const gameRef = doc(db, 'games', gameCode);
             const gameSnap = await getDoc(gameRef);
-            setGameExists(gameSnap.exists());
+            if (gameSnap.exists()) {
+                // Also check if the game is still in the lobby
+                if (gameSnap.data().state !== 'lobby') {
+                    setGameExists(false); // Treat a running game as un-joinable
+                    setError("This game has already started.");
+                } else {
+                    setGameExists(true);
+                }
+            } else {
+                setGameExists(false);
+            }
         };
         if (gameCode) {
             checkGame();
         }
     }, [gameCode]);
+
+    // NEW Effect: Listen for game start *after* the player has joined
+    useEffect(() => {
+        if (!hasJoined || !gameCode) return;
+
+        const gameRef = doc(db, 'games', gameCode);
+        const unsubscribe = onSnapshot(gameRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const gameState = docSnap.data() as GameState;
+                if (gameState.state === 'in-progress') {
+                    // Game has started! Redirect participant to their question view.
+                    router.push(`/play/${gameCode}/question`);
+                }
+            }
+        });
+
+        // Cleanup listener when component unmounts
+        return () => unsubscribe();
+
+    }, [hasJoined, gameCode, router]);
 
     const handleJoin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,19 +74,21 @@ export default function PlayLobbyPage() {
             setHasJoined(true);
         } catch (error) {
             console.error("Failed to join game", error);
-            // Handle error display
+            setError("Could not join the game. Please try again.");
         }
     };
 
     if (gameExists === null) return <div className="p-8 text-center">Checking game code...</div>;
-    if (gameExists === false) return <div className="p-8 text-center text-red-500">Game not found. Please check the code and try again.</div>;
+    if (gameExists === false) return <div className="p-8 text-center text-red-500">{error || "Game not found. Please check the code and try again."}</div>;
 
     if (hasJoined) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-700 text-white text-center">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-700 text-white text-center p-4">
                 <h2 className="text-3xl font-bold">You're in!</h2>
-                <p className="mt-4 text-xl">See your name on the screen?</p>
-                <p className="mt-12 text-2xl">Waiting for the presenter to start the quiz...</p>
+                <p className="mt-4 text-xl">See your name on the presenter's screen.</p>
+                <div className="mt-24 text-2xl animate-pulse">
+                    Waiting for the quiz to begin...
+                </div>
             </div>
         );
     }

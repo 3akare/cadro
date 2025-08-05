@@ -41,3 +41,4 @@ export const getQuizById = (id: string): Promise<Quiz> => api.get(`/quizzes/${id
 export const updateQuiz = (id: string, data: { title: string; questions: Question[] }): Promise<Quiz> => api.put(`/quizzes/${id}`, data).then(res => res.data);
 export const deleteQuiz = (id: string): Promise<void> => api.delete(`/quizzes/${id}`);
 export const createGame = (quizId: string): Promise<{ gameCode: string }> => api.post('/games', { quizId }).then(res => res.data);
+export const startGame = (gameCode: string): Promise<void> => api.post(`/games/${gameCode}/start`);
