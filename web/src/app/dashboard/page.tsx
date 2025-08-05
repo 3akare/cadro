@@ -30,7 +30,6 @@ export default function DashboardPage() {
         if (window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
             try {
                 await deleteQuiz(quizId);
-                // Remove the quiz from the state to update the UI instantly
                 setQuizzes(currentQuizzes => currentQuizzes.filter(q => q.id !== quizId));
             } catch (err) {
                 console.error("Failed to delete quiz", err);
@@ -78,6 +77,11 @@ export default function DashboardPage() {
                                         </p>
                                     </div>
                                     <div className="mt-5 border-t border-gray-200 pt-4 flex items-center justify-end space-x-4">
+                                        <Link href={`/dashboard/quiz/${quiz.id}/host`} className="flex-1">
+                                            <span className="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                                                Host
+                                            </span>
+                                        </Link>
                                         <Link href={`/dashboard/quiz/${quiz.id}/preview`}>
                                             <span className="text-sm font-medium text-gray-700 hover:text-gray-900">Preview</span>
                                         </Link>

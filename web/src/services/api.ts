@@ -36,13 +36,8 @@ export interface Quiz {
 
 // --- API FUNCTIONS ---
 export const getQuizzes = (): Promise<Quiz[]> => api.get('/quizzes').then(res => res.data);
-
-export const createQuiz = (data: { title: string; questions: Question[] }): Promise<Quiz> =>
-    api.post('/quizzes', data).then(res => res.data);
-
+export const createQuiz = (data: { title: string; questions: Question[] }): Promise<Quiz> => api.post('/quizzes', data).then(res => res.data);
 export const getQuizById = (id: string): Promise<Quiz> => api.get(`/quizzes/${id}`).then(res => res.data);
-
-export const updateQuiz = (id: string, data: { title: string; questions: Question[] }): Promise<Quiz> =>
-    api.put(`/quizzes/${id}`, data).then(res => res.data);
-
+export const updateQuiz = (id: string, data: { title: string; questions: Question[] }): Promise<Quiz> => api.put(`/quizzes/${id}`, data).then(res => res.data);
 export const deleteQuiz = (id: string): Promise<void> => api.delete(`/quizzes/${id}`);
+export const createGame = (quizId: string): Promise<{ gameCode: string }> => api.post('/games', { quizId }).then(res => res.data);
