@@ -5,7 +5,8 @@ import { firestore } from 'firebase-admin';
 // Interface for what a participant sends
 interface AnswerSubmission {
     answer: string;
-    participantId: string; // The auto-generated ID of the participant document
+    participantId: string;
+    timeLeft: number; // NEW: The time left on the clock when submitted
 }
 
 @Injectable()
@@ -82,7 +83,7 @@ export class GamesService {
         return { message: `Game ${gameCode} has started.` };
     }
 
-    async nextQuestion(gameCode: string, userId:string) {
+    async nextQuestion(gameCode: string, userId: string) {
         const gameRef = this.db.collection('games').doc(gameCode);
         const gameDoc = await gameRef.get();
 
@@ -129,25 +130,39 @@ export class GamesService {
 
         return this.db.runTransaction(async (transaction) => {
             const gameDoc = await transaction.get(gameRef);
-            const gameData = gameDoc.data()
-            if (!gameDoc.exists || !gameData || gameData.state !== 'in-progress') {
+            if (!gameDoc.exists || gameDoc.data()?.state !== 'in-progress') {
                 throw new BadRequestException("You can no longer submit for this question.");
             }
 
+            const gameData = gameDoc.data();
+            if (!gameData) {
+                throw new NotFoundException("Game data not found");
+            }
             const quizRef = this.db.collection('quizzes').doc(gameData.quizId);
             const quizDoc = await transaction.get(quizRef);
-            
-            const currentQuestionIndex = gameData.currentQuestionIndex;
-            const quizData = quizDoc.data()
+
+            const currentQuestionIndex = gameDoc.data()?.currentQuestionIndex ?? 0;
+            const quizData = quizDoc.data();
             const question = quizData && quizData.questions ? quizData.questions[currentQuestionIndex] : null;
-            
-            // Score calculation (simple version: 1000 points for correct, 0 for incorrect)
+
             let scoreToAdd = 0;
+            // Check if the answer is correct
             if (question.answer.toLowerCase() === submission.answer.toLowerCase()) {
-                scoreToAdd = 1000;
+                const basePoints = 1000;
+                const timeLeft = submission.timeLeft;
+                const questionTimer = question.timer;
+
+                // DEFENSIVE CHECK: Ensure we have valid numbers before calculating a score.
+                if (typeof timeLeft === 'number' && timeLeft > 0 && typeof questionTimer === 'number' && questionTimer > 0) {
+                    const timeBonus = (timeLeft / questionTimer);
+                    scoreToAdd = Math.round(basePoints * timeBonus);
+                } else {
+                    // If time data is invalid but the answer is correct, award a flat score.
+                    // This prevents NaN and handles edge cases gracefully.
+                    scoreToAdd = 500;
+                }
             }
 
-            // Save the answer and update the score
             const answerData = {
                 [`answers.${currentQuestionIndex}`]: {
                     answer: submission.answer,

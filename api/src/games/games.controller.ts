@@ -12,6 +12,7 @@ class CreateGameDto {
 interface AnswerSubmission {
     answer: string;
     participantId: string;
+    timeLeft: number; // NEW: The time left on the clock when submitted
 }
 
 @Controller('games')
@@ -31,7 +32,7 @@ export class GamesController {
         const { userId } = req.user;
         return this.gamesService.startGame(gameCode, userId);
     }
-    
+
     @UseGuards(JwtAuthGuard)
     @Post(':gameCode/next')
     nextQuestion(@Param('gameCode') gameCode: string, @Req() req) {

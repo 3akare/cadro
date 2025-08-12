@@ -62,7 +62,7 @@ export default function HostQuestionPage() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8">
-            {game?.state === 'in-progress' && currentQuestion && (
+            {game?.state === 'in-progress' && currentQuestion && quiz && (
                 <div className="text-center">
                     <p className="text-lg text-gray-500">Question {game.currentQuestionIndex + 1} of {quiz.questions.length}</p>
                     <h1 className="mt-4 text-4xl font-bold text-gray-900 max-w-4xl">{currentQuestion.text}</h1>
