@@ -9,20 +9,45 @@ class CreateGameDto {
     quizId: string;
 }
 
-@UseGuards(JwtAuthGuard)
+interface AnswerSubmission {
+    answer: string;
+    participantId: string;
+}
+
 @Controller('games')
 export class GamesController {
     constructor(private readonly gamesService: GamesService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard)
     create(@Body() createGameDto: CreateGameDto, @Req() req) {
         const { userId } = req.user;
         return this.gamesService.create(createGameDto.quizId, userId);
     }
 
     @Post(':gameCode/start')
+    @UseGuards(JwtAuthGuard)
     start(@Param('gameCode') gameCode: string, @Req() req) {
         const { userId } = req.user;
         return this.gamesService.startGame(gameCode, userId);
+    }
+    
+    @UseGuards(JwtAuthGuard)
+    @Post(':gameCode/next')
+    nextQuestion(@Param('gameCode') gameCode: string, @Req() req) {
+        const { userId } = req.user;
+        return this.gamesService.nextQuestion(gameCode, userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':gameCode/leaderboard')
+    showLeaderboard(@Param('gameCode') gameCode: string, @Req() req) {
+        const { userId } = req.user;
+        return this.gamesService.showLeaderboard(gameCode, userId);
+    }
+
+    @Post(':gameCode/submit')
+    submitAnswer(@Param('gameCode') gameCode: string, @Body() submission: AnswerSubmission) {
+        return this.gamesService.submitAnswer(gameCode, submission);
     }
 }
