@@ -64,18 +64,18 @@ export default function PlayLobbyPage() {
     const handleJoin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!pseudonym.trim()) return;
-
         try {
             const participantsRef = collection(db, 'games', gameCode, 'participants');
-            await addDoc(participantsRef, {
+            // Get the newly created document reference
+            const docRef = await addDoc(participantsRef, {
                 pseudonym: pseudonym.trim(),
                 score: 0,
+                answers: {}
             });
+            // --- NEW: Save the participant's unique ID to session storage ---
+            sessionStorage.setItem(`participantId-${gameCode}`, docRef.id);
             setHasJoined(true);
-        } catch (error) {
-            console.error("Failed to join game", error);
-            setError("Could not join the game. Please try again.");
-        }
+        } catch (error) { /* ... */ }
     };
 
     if (gameExists === null) return <div className="p-8 text-center">Checking game code...</div>;

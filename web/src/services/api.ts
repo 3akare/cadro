@@ -42,3 +42,6 @@ export const updateQuiz = (id: string, data: { title: string; questions: Questio
 export const deleteQuiz = (id: string): Promise<void> => api.delete(`/quizzes/${id}`);
 export const createGame = (quizId: string): Promise<{ gameCode: string }> => api.post('/games', { quizId }).then(res => res.data);
 export const startGame = (gameCode: string): Promise<void> => api.post(`/games/${gameCode}/start`);
+export const nextQuestion = (gameCode: string): Promise<void> => api.post(`/games/${gameCode}/next`);
+export const showLeaderboard = (gameCode: string): Promise<void> => api.post(`/games/${gameCode}/leaderboard`);
+export const submitAnswer = (gameCode: string, participantId: string, answer: string): Promise<{ scoreAwarded: number }> =>  api.post(`/games/${gameCode}/submit`, { participantId, answer });
