@@ -58,6 +58,17 @@ export class QuizzesService {
         return { id: doc.id, ...quizData };
     }
 
+    async findOnePublic(id: string) {
+        const docRef = this.db.collection('quizzes').doc(id);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            throw new NotFoundException(`Quiz with ID "${id}" not found.`);
+        }
+
+        return { id: doc.id, ...doc.data() };
+    }
+
     async update(id: string, updateQuizDto: CreateQuizDto, userId: string) {
         await this.findOne(id, userId);
 
